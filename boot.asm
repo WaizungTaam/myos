@@ -1,10 +1,27 @@
     org 0x7c00
 
+    mov [drive_num], dl
+    mov sp, 0x9000
+    call load_kernel
     jmp goto_pm
 
 
-
 [bits 16]
+
+load_kernel:
+    mov ax, 0
+    mov es, ax
+    mov ah, 0x02
+    mov al, 8
+    mov ch, 0
+    mov cl, 2
+    mov dh, 0
+    mov dl, [drive_num]    
+    mov bx, kernel_offset
+    int 0x13
+    ret
+
+
 goto_pm:
     cli
 
@@ -22,6 +39,7 @@ goto_pm:
 
 
 [bits 32]
+
 init_pm:
     mov ax, sel_data
     mov ds, ax
@@ -32,10 +50,7 @@ init_pm:
     mov eax, 0x90000
     mov esp, eax
 
-    mov ebx, 0xb8000
-    mov ah, 0x0f
-    mov al, 'P'
-    mov [ebx], ax
+    call kernel_offset
 
     jmp $
 
@@ -56,6 +71,10 @@ gdt_desc:
 
     sel_code equ desc_code - gdt
     sel_data equ desc_data - gdt
+
+
+    kernel_offset equ 0x1000
+    drive_num db 0
 
 
     times 510 - ($ - $$) db 0
